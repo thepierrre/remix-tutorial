@@ -1,9 +1,18 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
-import { getContact } from "../data";
+import { getContact, updateContact } from "../data";
+
+export const action = async ({ params, request }: ActionFunctionArgs) => {
+  invariant(params.contactId, "Missing contactId param");
+  const formData = await request.formData();
+  const updates = Object.fromEntries(formData);
+  // updates.first = "First name"
+  await updateContact(params.contactId, updates);
+  return redirect(`/contacts/${params.contactId}`);
+};
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   invariant(params.contactId, "Missing contactId param");
@@ -66,3 +75,8 @@ export default function EditContact() {
     </Form>
   );
 }
+
+// Without JavaScript, when a form is submitted,
+// the browser will create FormData and set it as the body of the request when it sends it to the server.
+// Remix prevents that and emulates the browser by sending the request to your action function with fetch instead,
+// including the FormData.
